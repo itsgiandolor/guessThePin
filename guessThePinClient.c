@@ -1,8 +1,8 @@
 /*#----------------------------------------------------------------------------------------------------------------#
 # Filename : 202300446_le9_client.c#
-# Author : Gian Paolo O. Dolor#
-# Last Modified : Feb 12, 2025 #
-# Description : A c program of a client in a client-server interaction #
+# Author : olor, Llagas, Mien, Raposa, Valencia#
+# Last Modified : April 3, 2025 #
+# Description : A proposed Guess The Pin project #
 # Honor Code : This is my own program. I have not received any #
 # unauthorized help in completing this work. I have not #
 # copied from my classmate, friend, nor any unauthorized #
