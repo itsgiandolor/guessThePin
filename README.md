@@ -1,22 +1,23 @@
 # guessThePin
-This is the repository of our group in Operating System. The game we came up with is called "Guess The Pin". A fun and challenging two-player game where each player tries to guess the opponent's secret 3-digit number.
+This is the repository of our group in Operating System. The game we came up with is called "Guess The Pin". A fun and competitive two-player game where each player tries to guess the opponent's secret PIN across 3 difficulty levels. The player who wins the most rounds is crowned the overall champion!
 
 Game Title: Guess the Pin
 
 Game description:
 
-A fun and challenging two-player game where each player tries to guess the opponent's secret 3-digit number.
+A fun and competitive two-player game where each player tries to guess the opponent's secret PIN across 3 difficulty levels. The player who wins the most rounds is crowned the overall champion!
 
 Game Mechanics:
-Both players secretly choose a 3-digit number.
-Players take turns guessing the other player's number, trying to get the correct digits in the correct order.
-Each player has a limited number of attempts to guess the correct number (e.g., 5 attempts).
-A time limit is set for each guess (e.g., 30 seconds). Failing to guess within the time results in a forfeited turn.
-After each incorrect guess, the player receives a hint:
-Correct Digit and Position: The number of digits that are correct and in the right position.
-Correct Digit but Wrong Position: The number of correct digits in the wrong position.
-The game consists of multiple rounds. The player who wins the most rounds becomes the overall winner.
-The first player to guess the opponent’s number correctly within the allowed attempts and time wins the round.
+PIN Selection: Both players secretly choose a n-digit number according to difficulty.
+    -Easy Level: 3-digit PIN
+    -Medium Level: 4-digit PIN
+    -Hard Level: 5-digit PIN
+Turn-Based Guessing: Players take turns guessing the other player's number, trying to get the correct digits in the correct order.
+Hints After Each Guess: After each incorrect guess, the player receives a hint:
+    -Correct Digit and Position: The number of digits that are correct and in the right position.
+    -Correct Digit but Wrong Position: The number of correct digits in the wrong position.
+Winning a Level: The first player to guess the opponent’s number correctly within the allowed attempts and time wins the round.
+Overall Winner: After completing all levels (Easy, Medium, Hard), the player who has won the most levels is declared the overall winner.
 
 Tentative Group Members:
 Ma. Kristine Mien

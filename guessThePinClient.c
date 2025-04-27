@@ -1,7 +1,7 @@
 /*#----------------------------------------------------------------------------------------------------------------#
 # Filename : guessThePinclient.c#
 # Author : Dolor, Llagas, Mien, Raposa, Valencia#
-# Last Modified : April 3, 2025 #
+# Last Modified : April 27, 2025 #
 # Description : A proposed Guess The Pin project #
 # Honor Code : This is my own program. I have not received any #
 # unauthorized help in completing this work. I have not #
@@ -33,6 +33,7 @@ int main(int argc,  char *argv[]){
     struct hostent *server;
     char buffer[256], clientPin[3], serverPin[3], guess[3], result[256];
     int serverGuessCount = 0, clientGuessCount = 0, gameOver = 0;
+    int serverWins = 0, clientWins = 0; 
     
     if (argc < 3) {
         printf("Usage: %s hostname port_no",  argv[0]);
@@ -68,91 +69,109 @@ int main(int argc,  char *argv[]){
 
     printf("Connection successful!\n");
     
-    // Get client pin
-    printf("Enter a 3 digit pin\n> ");
-    for (int i = 0; i < 3; i++) {
-        scanf(" %c", &clientPin[i]);
-    }
-    printf("Client PIN set to: %c %c %c\n", clientPin[0], clientPin[1], clientPin[2]);
-  
-    // Send client pin to server
-    n = send(client_sock, clientPin, 3, 0);
-    if (n < 0) die_with_error("Error: send() Failed (sending pin).");
+    int difficulty;
+    int pin_lengths[] = {3, 4, 5};
+    char level_names[][7] = {"Easy", "Medium", "Hard"};
     
-    // Receive server pin
-    n = recv(client_sock, serverPin, 3, 0);
-    if (n < 0) die_with_error("Error: recv() Failed (receiving pin).");
+    recv(client_sock, &difficulty, sizeof(int), 0);
     
-    printf("Server PIN received.\n");
+    while (difficulty <= 3) {
+        int pin_length = pin_lengths[difficulty-1];
+        char serverPin[5], clientPin[5], guess[5], result[256];
+        int serverGuessCount = 0, clientGuessCount = 0;
+        int gameOver = 0;
+        
+        printf("\n=== Level %d: %s (%d pins) ===\n", difficulty, level_names[difficulty-1], pin_length);
+    
+        printf("Enter your %d-digit PIN: ", pin_length);
+        for (int i = 0; i < pin_length; i++) {
+            scanf(" %c", &clientPin[i]);
+        }
+        printf("Your PIN set to: ");
+        for (int i = 0; i < pin_length; i++) printf("%c ", clientPin[i]);
+        printf("\n");
+        
+        n = send(client_sock, clientPin, pin_length, 0);
+        if (n < 0) die_with_error("Error: send() Failed (sending pin).");
+        
+        n = recv(client_sock, serverPin, pin_length, 0);
+        if (n < 0) die_with_error("Error: recv() Failed (receiving pin).");
 
-    // Turn-based game loop
-    while (!gameOver) {
-        // Wait for server to send guess
-        printf("\n[Turn] Waiting for server's guess...\n");
-        bzero(guess, 3);
-        n = recv(client_sock, guess, 3, 0);
-        if (n < 0) die_with_error("Error: recv() Failed (server guess).");
+        printf("Server PIN received.\n");
 
-        serverGuessCount++;
+        while (gameOver==0) {
+            printf("\n[Server's Turn] Waiting for server's guess...\n");
+            bzero(guess, 5);
+            recv(client_sock, guess, pin_length, 0);
+            serverGuessCount++;
 
-        // Check server's guess
-        int correct_place = 0, correct_digit = 0;
-        for (int i = 0; i < 3; i++) {
-            if (guess[i] == clientPin[i]) {
-                correct_place++;
-            } else {
-                for (int j = 0; j < 3; j++) {
-                    if (i != j && guess[i] == clientPin[j]) {
-                        correct_digit++;
+            int correct_place = 0, correct_digit = 0;
+            for (int i = 0; i < pin_length; i++) {
+                if (guess[i] == clientPin[i]) {
+                    correct_place++;
+                } else {
+                    for (int j = 0; j < pin_length; j++) {
+                        if (i != j && guess[i] == clientPin[j]) {
+                            correct_digit++;
+                            break;
+                        }
                     }
                 }
             }
+
+            bzero(result, 256);
+            if (correct_place == pin_length) {
+                sprintf(result, "Correct! You guessed it");
+                send(client_sock, result, strlen(result), 0);
+                printf("Server wins this level!\n");
+                serverWins++;
+                gameOver = 1;
+                break;
+            } else {
+                sprintf(result, "%d correct in place, %d correct but wrong place", correct_place, correct_digit);
+                send(client_sock, result, strlen(result), 0);
+            }
+
+            if (gameOver) break;
+
+            printf("\n[Turn] Your turn to guess the server's PIN!\n");
+            printf("Enter your guess:\n> ");
+            for (int i = 0; i < pin_length; i++) scanf(" %c", &guess[i]);
+            clientGuessCount++;
+
+            n = send(client_sock, guess, pin_length, 0);
+            if (n < 0) die_with_error("Error: send() Failed (client guess).");
+
+            bzero(result, 256);
+            n = recv(client_sock, result, 255, 0);
+            if (n < 0) die_with_error("Error: recv() Failed (result from server).");
+
+            printf("[Server] > %s\n", result);
+        
+            if (strncmp(result, "Correct", 7) == 0) {
+                printf("You win this level in %d attempts!\n", clientGuessCount);
+                clientWins++;
+                gameOver = 1;
+                break;
+            }
         }
 
-        bzero(result, 256);
-        if (correct_place == 3) {
-            sprintf(result, "Correct! You guessed it!");
-            gameOver = 1;
-            printf("Server wins in %d guess(es)!\n", serverGuessCount);
-        } else {
-            sprintf(result, "%d correct in place, %d correct but wrong place.", correct_place, correct_digit);
-        }
+        recv(client_sock, &difficulty, sizeof(int), 0);
+    }
+    
+    printf("\n=== GAME OVER ===\n");
+    printf("Server wins: %d\n", serverWins);
+    printf("Client wins: %d\n", clientWins);
 
-        // Send result to server
-        n = send(client_sock, result, strlen(result), 0);
-        if (n < 0) die_with_error("Error: send() Failed (feedback to server).");
-
-        if (gameOver) break;
-
-        // Client turn to guess
-        printf("\n[Turn] Your turn to guess the server's PIN!\n");
-        printf("Enter your guess (3 digits):\n> ");
-        for (int i = 0; i < 3; i++) {
-            scanf(" %c", &guess[i]);
-        }
-
-        clientGuessCount++;
-
-        // Send guess to server
-        n = send(client_sock, guess, 3, 0);
-        if (n < 0) die_with_error("Error: send() Failed (client guess).");
-
-        // Receive result
-        bzero(result, 256);
-        n = recv(client_sock, result, 255, 0);
-        if (n < 0) die_with_error("Error: recv() Failed (result from server).");
-
-        printf("[server] > %s\n", result);
-
-        if (strncmp(result, "Correct", 7) == 0) {
-            printf("You win in %d guess(es)!\n", clientGuessCount);
-            gameOver = 1;
-            break;
-        }
+    if (serverWins > clientWins) {
+        printf("🏆 Server is the overall winner!\n");
+    } else if (clientWins > serverWins) {
+        printf("🏆 Client is the overall winner!\n");
+    } else {
+        printf("🤝 It's a tie!\n");
     }
 
-    
-    printf("Closing connection ...\n");
+    printf("\nClosing connection ...\n");
     close(client_sock);
     
     return 0;
