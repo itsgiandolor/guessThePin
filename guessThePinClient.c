@@ -20,6 +20,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <time.h> // for timer functionality
 
 void die_with_error(char *error_msg){
     printf("%s", error_msg);
@@ -98,8 +99,26 @@ int main(int argc,  char *argv[]){
         if (n < 0) die_with_error("Error: recv() Failed (receiving pin).");
 
         printf("Server PIN received.\n");
-
+        
+        // timer based on difficulty
+        time_t start_time, current_time;
+        
+        // start timer
+        time(&start_time);
+        
         while (gameOver==0) {
+            // timer check
+            time(&current_time);
+            int time_left = (difficulty == 1 ? 90 : (difficulty == 2 ? 60 : 30)) - (current_time - start_time);
+            
+            if (time_left >= 0) {
+              printf("Time's left: %d seconds\n", time_left);
+            } else {
+              printf("Time's up! The round has ended.\n");
+              gameOver = 1;
+              break;
+            }
+            
             printf("\n[Server's Turn] Waiting for server's guess...\n");
             bzero(guess, 5);
             recv(client_sock, guess, pin_length, 0);
@@ -131,7 +150,7 @@ int main(int argc,  char *argv[]){
                 sprintf(result, "%d correct in place, %d correct but wrong place", correct_place, correct_digit);
                 send(client_sock, result, strlen(result), 0);
             }
-
+            
             if (gameOver) break;
 
             printf("\n[Turn] Your turn to guess the server's PIN!\n");
