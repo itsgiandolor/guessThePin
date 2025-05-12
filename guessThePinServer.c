@@ -192,6 +192,7 @@ int main(int argc, char *argv[]){
 
     printf("\nClosing connection ...\n");
     close(client_sock);
+    close(server_sock);
     
     return 0;
 }
