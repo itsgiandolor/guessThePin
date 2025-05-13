@@ -72,15 +72,19 @@ int main(int argc, char *argv[]){
 
     printf("Client succesfully connected ...\n"); 
     
-    int difficulty = 1;
+    int difficulty ;
     int pin_lengths[] = {3, 4, 5};
     char level_names[][7] = {"Easy", "Medium", "Hard"};
+    char server_replay, client_replay;
     
+    repeat:
+    difficulty = 1;
+
     send(client_sock, &difficulty, sizeof(int), 0); 
-    
-    while (true) {
+
+    while (difficulty<=3) {
         int pin_length = pin_lengths[difficulty-1];
-        char serverPin[5], clientPin[5], guess[5], result[256], replay;
+        char serverPin[5], clientPin[5], guess[5], result[256];
         int serverGuessCount = 0, clientGuessCount = 0;
         int gameOver = 0;
         
@@ -178,15 +182,15 @@ int main(int argc, char *argv[]){
 
         difficulty++;
         send(client_sock, &difficulty, sizeof(int), 0);
-        printf("Would you like to play again?[y/n]\n");
-        scanf("%c", replay);
-        if('y'){
-            continue;
-        }
-        else {
-            break;
-        }
     }
+    printf("\nWould you like to play again?[y/n]\n");
+        scanf(" %c", &server_replay);
+        n = send(client_sock, &server_replay, 1, 0);
+        printf("\n[Client's Turn] Waiting for client's response...\n");
+        n = recv(client_sock, &client_replay, 1, 0);
+        if(client_replay == 'y' && server_replay == 'y'){
+            goto repeat;
+        }
     
     printf("\n=== GAME OVER ===\n");
     printf("Server wins: %d\n", serverWins);
