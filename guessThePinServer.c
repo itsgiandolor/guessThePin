@@ -19,6 +19,8 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <time.h> // for timer functionality
+#include <stdbool.h>
+
 
 void die_with_error(char *error_msg){
     printf("%s", error_msg);
@@ -76,9 +78,9 @@ int main(int argc, char *argv[]){
     
     send(client_sock, &difficulty, sizeof(int), 0); 
     
-    while (difficulty <= 3) {
+    while (true) {
         int pin_length = pin_lengths[difficulty-1];
-        char serverPin[5], clientPin[5], guess[5], result[256];
+        char serverPin[5], clientPin[5], guess[5], result[256], replay;
         int serverGuessCount = 0, clientGuessCount = 0;
         int gameOver = 0;
         
@@ -176,6 +178,14 @@ int main(int argc, char *argv[]){
 
         difficulty++;
         send(client_sock, &difficulty, sizeof(int), 0);
+        printf("Would you like to play again?[y/n]\n");
+        scanf("%c", replay);
+        if('y'){
+            continue;
+        }
+        else {
+            break;
+        }
     }
     
     printf("\n=== GAME OVER ===\n");
