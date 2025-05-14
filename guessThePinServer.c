@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <time.h> // for timer functionality
 #include <stdbool.h>
+#include <ctype.h> // for isdigit() function
 
 void die_with_error(char *error_msg){
     printf("\n\x1b[31mERROR:\x1b[0m %s\n", error_msg);
@@ -36,7 +37,7 @@ int main(int argc, char *argv[]){
     // Top banner
     printf("\n");
     printf("╔════════════════════════════════════════════════╗\n");
-    printf("║        🎮 GUESS THE PIN - SERVER SIDE           ║\n");
+    printf("║        🎮 GUESS THE PIN - SERVER SIDE          ║\n");
     printf("╚════════════════════════════════════════════════╝\n\n");
 
     if (argc < 2) {
@@ -83,20 +84,40 @@ int main(int argc, char *argv[]){
         int pin_length = pin_lengths[difficulty-1];
         char serverPin[5], clientPin[5], guess[5], result[256];
         time_t start_time, current_time;
+        bool isValid;
         gameOver = 0;
         serverGuessCount = clientGuessCount = 0;
 
         // Level header
         printf("\n");
         printf("┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n");
-        printf("┃  Level %d: %-6s   [PIN length: %d]               ┃\n", difficulty, level_names[difficulty-1], pin_length);
+        printf("┃  Level %d: %-6s   [PIN length: %d]                ┃\n", difficulty, level_names[difficulty-1], pin_length);
         printf("┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n");
 
-        // Set server PIN
-        printf("→ Enter your %d-digit PIN: ", pin_length);
-        for (int i = 0; i < pin_length; i++){
-            scanf(" %c", &serverPin[i]);
-        }
+        do {
+            isValid = true;  
+            // Set Server PIN
+            printf("→ Enter your %d-digit PIN: ", pin_length);
+    
+            for (int i = 0; i < pin_length; i++) {
+                char ch;
+                scanf(" %c", &ch);
+    
+                // Check if the input are digits, otherwise retype PIN
+                if (isdigit(ch)) {
+                    serverPin[i] = ch;
+                } else {
+                    printf("✖ Invalid character detected. Please enter a new PIN.\n\n");
+                    isValid = false;
+    
+                    // Clear remaining input buffer and flush line
+                    while (getchar() != '\n');  
+    
+                    break;
+                }
+            }
+        } while (!isValid);
+
         printf("✔ Your PIN is set: ");
         for (int i = 0; i < pin_length; i++) printf("%c", serverPin[i]);
         printf("\n\n");
@@ -165,6 +186,19 @@ int main(int argc, char *argv[]){
         send(client_sock, &difficulty, sizeof(int), 0);
     }
     
+    // Final results
+    printf("\n╔═══════════════════ GAME OVER ═══════════════════╗\n");
+    printf("║  Server wins : %d                                ║\n", serverWins);
+    printf("║  Client wins : %d                                ║\n", clientWins);
+    printf("╠═════════════════════════════════════════════════╣\n");
+    if (serverWins > clientWins)
+        printf("║  🏆  Overall Winner: SERVER                     ║\n");
+    else if (clientWins > serverWins)
+        printf("║  🏆  Overall Winner: CLIENT                     ║\n");
+    else
+        printf("║  🤝  It's a TIE!                               ║\n");
+    printf("╚═════════════════════════════════════════════════╝\n");
+    
     printf("\nWould you like to play again?[y/n]\n");
         scanf(" %c", &server_replay);
         n = send(client_sock, &server_replay, 1, 0);
@@ -174,18 +208,7 @@ int main(int argc, char *argv[]){
             goto repeat;
         }
 
-    // Final results
-    printf("\n╔═══════════════════ GAME OVER ═══════════════════╗\n");
-    printf("║  Server wins : %d                               ║\n", serverWins);
-    printf("║  Client wins : %d                               ║\n", clientWins);
-    printf("╠═════════════════════════════════════════════════╣\n");
-    if (serverWins > clientWins)
-        printf("║  🏆  Overall Winner: SERVER                     ║\n");
-    else if (clientWins > serverWins)
-        printf("║  🏆  Overall Winner: CLIENT                     ║\n");
-    else
-        printf("║  🤝  It's a TIE!                               ║\n");
-    printf("╚═════════════════════════════════════════════════╝\n");
+    
 
     printf("\nClosing connection...\n");
     close(client_sock);
