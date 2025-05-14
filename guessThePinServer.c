@@ -20,6 +20,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <time.h> // for timer functionality
+#include <stdbool.h>
 
 void die_with_error(char *error_msg){
     printf("\n\x1b[31mERROR:\x1b[0m %s\n", error_msg);
@@ -72,6 +73,10 @@ int main(int argc, char *argv[]){
     int difficulty = 1;
     int pin_lengths[] = {3, 4, 5};
     char level_names[][7] = {"Easy", "Medium", "Hard"};
+    char server_replay, client_replay;
+    
+    repeat:
+    difficulty = 1;
     send(client_sock, &difficulty, sizeof(int), 0);
 
     while (difficulty <= 3) {
@@ -159,6 +164,15 @@ int main(int argc, char *argv[]){
         difficulty++;
         send(client_sock, &difficulty, sizeof(int), 0);
     }
+    
+    printf("\nWould you like to play again?[y/n]\n");
+        scanf(" %c", &server_replay);
+        n = send(client_sock, &server_replay, 1, 0);
+        printf("\n[Client's Turn] Waiting for client's response...\n");
+        n = recv(client_sock, &client_replay, 1, 0);
+        if(client_replay == 'y' && server_replay == 'y'){
+            goto repeat;
+        }
 
     // Final results
     printf("\n╔═══════════════════ GAME OVER ═══════════════════╗\n");
